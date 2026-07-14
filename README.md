@@ -41,3 +41,7 @@ app.py               # Streamlit arayüzü ve akış
 ## Notlar
 
 - SAP ve veritabanı kimlik bilgileri repoya dahil değildir, `.env` üzerinden verilir.
+
+---
+
+> Bu proje bir stajım sırasında canlı bir SAP ortamına karşı geliştirilip defalarca test edilmiştir. Bu repo, gerçek sunucu adresleri ve kimlik bilgileri temizlenmiş, genel kullanıma uygun hale getirilmiş halidir.
