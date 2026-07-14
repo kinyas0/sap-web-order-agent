@@ -1,0 +1,6 @@
+streamlit
+pyrfc
+rapidfuzz
+openai
+python-dotenv
+psycopg[binary]
