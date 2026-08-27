@@ -1,0 +1,10 @@
+# Pinned explicitly so a ruff upgrade cannot change what CI enforces.
+line-length = 90
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "BLE", "C4"]
+
+[lint.per-file-ignores]
+# Tests reach into private helpers on purpose, and assert on internals.
+"tests/*" = ["S101", "SLF001"]

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      # pyrfc needs the SAP NetWeaver RFC SDK, which is licensed and cannot be
+      # installed on a public runner. services/sap_service.py imports it defensively
+      # so everything that does not open a connection is still testable here.
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest ruff "psycopg[binary]" psycopg-pool rapidfuzz \
+                      openai python-dotenv \
+                      google-auth google-auth-oauthlib google-api-python-client
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest -q
+
+  schema:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["5432:5432"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The audit trail is only useful if the schema it writes into actually
+      # applies, and applies twice - the DDL is meant to be safe to re-run.
+      - name: Apply schema, then apply it again
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f db/schema.sql
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f db/schema.sql
+
+      - name: Check the tables exist
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 -c "
+            SELECT tablename FROM pg_tables
+             WHERE schemaname = 'public'
+             ORDER BY tablename;"
